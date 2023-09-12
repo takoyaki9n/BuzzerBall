@@ -1,4 +1,3 @@
-#include <math.h>
 #include <Wire.h>
 
 // Constants
@@ -24,6 +23,7 @@
 #define PIN_BUZZ 0
 #define GYRO_FS  GYRO_FS_2000
 #define GYRO_SEN GYRO_SEN_2000
+// #define SERIAL_ON
 
 void writeMPU(uint8_t addr, uint8_t data) {
   Wire.beginTransmission(MPU_ADDRESS);
@@ -39,14 +39,13 @@ void readMPU(uint8_t addr) {
 }
 
 void setup() {
-  Wire.begin();
+#ifdef SERIAL_ON
+  Serial.begin(9600);
+#endif
 
+  Wire.begin();
   writeMPU(MPU_PWR_MGMT_1, 0b00001000);
   writeMPU(MPU_GYRO_CONFIG, GYRO_FS);
-}
-
-float sqr(float x) {
-  return x * x;
 }
 
 void getGyros(int16_t* gx, int16_t* gy, int16_t* gz) {
@@ -59,20 +58,28 @@ void getGyros(int16_t* gx, int16_t* gy, int16_t* gz) {
   *gz = Wire.read() << 8 | Wire.read();
 }
 
-float toNote(float value, float valueMax, float noteMin, float noteMax) {
-  float scale = (value < valueMax) ? value / valueMax : 1.0;
-
-  return scale * (noteMax - noteMin) + noteMin;
-}
-
 void loop() {
   int16_t gx, gy, gz;
   getGyros(&gx, &gy, &gz);
 
-  float gSqr = sqr(gx / GYRO_SEN) + sqr(gy / GYRO_SEN) + sqr(gz / GYRO_SEN);
-  float gSqrt = sqrt(gSqr);
-  float note = toNote(gSqrt, 3464.1 , 130.81, 3951.07);
+  int32_t gyro = abs(gx) + abs(gy) + abs(gz);
 
-  tone(PIN_BUZZ, note);
+  const float freqMax = 8000.0;
+  const float gyroMax = 98304.0;
+  float note = freqMax * gyro / gyroMax;
+
+#ifdef SERIAL_ON
+  Serial.print(gyro); Serial.print(",\t");
+  Serial.print(note); Serial.print(",\t");
+  Serial.println("");
+#endif
+
+  const int32_t threshold = 1000;
+  if (gyro > threshold) {
+    tone(PIN_BUZZ, note);
+  } else {
+    noTone(PIN_BUZZ);
+  }
   delay(10);
+
 }
