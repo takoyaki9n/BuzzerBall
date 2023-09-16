@@ -21,9 +21,12 @@
 
 // Config
 #define PIN_BUZZ 0
+#define FREQ_MAX 5000.0
+#define GYRO_MAX 2000
 #define GYRO_FS  GYRO_FS_2000
 #define GYRO_SEN GYRO_SEN_2000
 // #define SERIAL_ON
+
 
 void writeMPU(uint8_t addr, uint8_t data) {
   Wire.beginTransmission(MPU_ADDRESS);
@@ -62,11 +65,9 @@ void loop() {
   int16_t gx, gy, gz;
   getGyros(&gx, &gy, &gz);
 
-  int32_t gyro = abs(gx) + abs(gy) + abs(gz);
+  float gyro = abs(gx / GYRO_SEN) + abs(gy / GYRO_SEN) + abs(gz / GYRO_SEN);
 
-  const float freqMax = 8000.0;
-  const float gyroMax = 98304.0;
-  float note = freqMax * gyro / gyroMax;
+  float note = FREQ_MAX * gyro / (GYRO_MAX * 3);
 
 #ifdef SERIAL_ON
   Serial.print(gyro); Serial.print(",\t");
@@ -74,7 +75,7 @@ void loop() {
   Serial.println("");
 #endif
 
-  const int32_t threshold = 1000;
+  const float threshold = 90;
   if (gyro > threshold) {
     tone(PIN_BUZZ, note);
   } else {
