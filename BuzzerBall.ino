@@ -20,7 +20,7 @@
 #define GYRO_SEN_2000 16.4
 
 // Config
-#define PIN_BUZZ 0
+#define PIN_BUZZ 3
 #define FREQ_MAX 5000.0
 #define GYRO_MAX 2000
 #define GYRO_FS  GYRO_FS_2000
